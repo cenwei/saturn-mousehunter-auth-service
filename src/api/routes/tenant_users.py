@@ -1,30 +1,30 @@
 """
-认证服务 - 管理员用户API路由
+认证服务 - 租户用户API路由
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from domain.models.auth_admin_user import (
-    AdminUserIn, AdminUserOut, AdminUserUpdate, AdminUserQuery,
-    AdminUserLogin, AdminUserResponse
+from domain.models.auth_tenant_user import (
+    TenantUserIn, TenantUserOut, TenantUserUpdate, TenantUserQuery,
+    TenantUserLogin, TenantUserResponse
 )
-from application.services import AdminUserService
-from api.dependencies.auth import get_admin_user, require_permissions
-from api.dependencies.services import get_admin_user_service
+from application.services import TenantUserService
+from api.dependencies.auth import get_tenant_user, require_permissions
+from api.dependencies.services import get_tenant_user_service
 
-router = APIRouter(prefix="/admin/users", tags=["管理员用户"])
+router = APIRouter(prefix="/users", tags=["租户用户"])
 
 
-@router.post("/login", response_model=AdminUserResponse)
+@router.post("/login", response_model=TenantUserResponse)
 async def login(
     request: Request,
-    login_data: AdminUserLogin,
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    login_data: TenantUserLogin,
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """管理员用户登录"""
+    """租户用户登录"""
     client_ip = request.client.host
     user_agent = request.headers.get("user-agent")
 
-    response = await admin_service.authenticate(
+    response = await tenant_service.authenticate(
         login_data=login_data,
         ip_address=client_ip,
         user_agent=user_agent
@@ -33,21 +33,21 @@ async def login(
     if not response:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户名或密码错误"
+            detail="租户ID、用户名或密码错误"
         )
 
     return response
 
 
-@router.post("/", response_model=AdminUserOut)
-async def create_admin_user(
-    user_data: AdminUserIn,
+@router.post("/", response_model=TenantUserOut)
+async def create_tenant_user(
+    user_data: TenantUserIn,
     current_user: dict = Depends(require_permissions(["user:write"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """创建管理员用户"""
+    """创建租户用户"""
     try:
-        return await admin_service.create_admin_user(
+        return await tenant_service.create_tenant_user(
             user_data=user_data,
             created_by=current_user["user_id"]
         )
@@ -59,12 +59,12 @@ async def create_admin_user(
 
 
 @router.get("/me", response_model=dict)
-async def get_current_admin_profile(
-    current_user: dict = Depends(get_admin_user),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+async def get_current_tenant_profile(
+    current_user: dict = Depends(get_tenant_user),
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """获取当前管理员用户资料"""
-    profile = await admin_service.get_profile(current_user["user_id"])
+    """获取当前租户用户资料"""
+    profile = await tenant_service.get_profile(current_user["user_id"])
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -73,14 +73,14 @@ async def get_current_admin_profile(
     return profile
 
 
-@router.get("/{user_id}", response_model=AdminUserOut)
-async def get_admin_user(
+@router.get("/{user_id}", response_model=TenantUserOut)
+async def get_tenant_user(
     user_id: str,
     current_user: dict = Depends(require_permissions(["user:read"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """获取管理员用户详情"""
-    user = await admin_service.get_admin_user(user_id)
+    """获取租户用户详情"""
+    user = await tenant_service.get_tenant_user(user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -89,16 +89,16 @@ async def get_admin_user(
     return user
 
 
-@router.put("/{user_id}", response_model=AdminUserOut)
-async def update_admin_user(
+@router.put("/{user_id}", response_model=TenantUserOut)
+async def update_tenant_user(
     user_id: str,
-    update_data: AdminUserUpdate,
+    update_data: TenantUserUpdate,
     current_user: dict = Depends(require_permissions(["user:write"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """更新管理员用户"""
+    """更新租户用户"""
     try:
-        user = await admin_service.update_admin_user(
+        user = await tenant_service.update_tenant_user(
             user_id=user_id,
             update_data=update_data,
             updated_by=current_user["user_id"]
@@ -117,14 +117,14 @@ async def update_admin_user(
 
 
 @router.delete("/{user_id}")
-async def delete_admin_user(
+async def delete_tenant_user(
     user_id: str,
     current_user: dict = Depends(require_permissions(["user:write"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """删除管理员用户"""
+    """删除租户用户"""
     try:
-        success = await admin_service.delete_admin_user(
+        success = await tenant_service.delete_tenant_user(
             user_id=user_id,
             deleted_by=current_user["user_id"]
         )
@@ -141,14 +141,26 @@ async def delete_admin_user(
         )
 
 
-@router.get("/", response_model=List[AdminUserOut])
-async def list_admin_users(
-    query_params: AdminUserQuery = Depends(),
+@router.get("/", response_model=List[TenantUserOut])
+async def list_tenant_users(
+    query_params: TenantUserQuery = Depends(),
     current_user: dict = Depends(require_permissions(["user:read"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
-    """获取管理员用户列表"""
-    return await admin_service.list_admin_users(query_params)
+    """获取租户用户列表"""
+    return await tenant_service.list_tenant_users(query_params)
+
+
+@router.get("/tenant/{tenant_id}", response_model=List[TenantUserOut])
+async def list_users_by_tenant(
+    tenant_id: str,
+    limit: int = 20,
+    offset: int = 0,
+    current_user: dict = Depends(require_permissions(["user:read"])),
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
+):
+    """根据租户ID获取用户列表"""
+    return await tenant_service.list_by_tenant(tenant_id, limit, offset)
 
 
 @router.post("/{user_id}/change-password")
@@ -156,8 +168,8 @@ async def change_password(
     user_id: str,
     old_password: str,
     new_password: str,
-    current_user: dict = Depends(get_admin_user),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    current_user: dict = Depends(get_tenant_user),
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
     """修改密码"""
     # 只能修改自己的密码，或者有用户管理权限
@@ -168,7 +180,7 @@ async def change_password(
         )
 
     try:
-        success = await admin_service.change_password(
+        success = await tenant_service.change_password(
             user_id=user_id,
             old_password=old_password,
             new_password=new_password,
@@ -189,11 +201,11 @@ async def reset_password(
     user_id: str,
     new_password: str = None,
     current_user: dict = Depends(require_permissions(["user:write"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
+    tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
     """重置密码（管理员操作）"""
     try:
-        generated_password = await admin_service.reset_password(
+        generated_password = await tenant_service.reset_password(
             user_id=user_id,
             new_password=new_password,
             reset_by=current_user["user_id"]

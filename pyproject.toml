@@ -16,7 +16,9 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.6",
-    "saturn-mousehunter-shared>=0.1.0"
+    "saturn-mousehunter-shared>=0.1.0",
+    "pyjwt>=2.10.1",
+    "email-validator>=2.3.0",
 ]
 
 [project.scripts]
