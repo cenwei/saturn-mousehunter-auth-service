@@ -246,7 +246,7 @@ class RoleRepo:
             return None
 
         # 获取角色权限
-        query = f"""
+        query = """
         SELECT p.* FROM mh_auth_permissions p
         JOIN mh_auth_role_permissions rp ON p.id = rp.permission_id
         WHERE rp.role_id = $1

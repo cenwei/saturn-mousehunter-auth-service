@@ -3,6 +3,7 @@
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from saturn_mousehunter_shared.log.logger import get_logger
 from domain.models.auth_tenant_user import (
     TenantUserIn, TenantUserOut, TenantUserUpdate, TenantUserQuery,
     TenantUserLogin, TenantUserResponse
@@ -11,6 +12,7 @@ from application.services import TenantUserService
 from api.dependencies.auth import get_tenant_user, require_permissions
 from api.dependencies.services import get_tenant_user_service
 
+log = get_logger(__name__)
 router = APIRouter(prefix="/users", tags=["租户用户"])
 
 
@@ -21,7 +23,7 @@ async def login(
     tenant_service: TenantUserService = Depends(get_tenant_user_service)
 ):
     """租户用户登录"""
-    client_ip = request.client.host
+    client_ip = str(request.client.host)
     user_agent = request.headers.get("user-agent")
 
     response = await tenant_service.authenticate(
@@ -98,6 +100,21 @@ async def update_tenant_user(
 ):
     """更新租户用户"""
     try:
+        # 添加类型检查以确保current_user是字典
+        if not isinstance(current_user, dict):
+            log.error(f"current_user is not a dict, got: {type(current_user)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="认证信息格式错误"
+            )
+
+        if "user_id" not in current_user:
+            log.error(f"current_user missing user_id key, keys: {current_user.keys()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="认证信息不完整"
+            )
+
         user = await tenant_service.update_tenant_user(
             user_id=user_id,
             update_data=update_data,
@@ -113,6 +130,12 @@ async def update_tenant_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+    except Exception as e:
+        log.error(f"Update tenant user failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="更新用户失败，请稍后重试"
         )
 
 

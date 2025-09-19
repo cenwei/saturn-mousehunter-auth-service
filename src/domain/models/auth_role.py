@@ -2,9 +2,12 @@
 认证服务 - 角色Domain Model
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from enum import Enum
 from pydantic import BaseModel, Field, validator
+
+if TYPE_CHECKING:
+    from .auth_permission import PermissionOut
 
 
 class RoleScope(str, Enum):
@@ -80,8 +83,3 @@ class RoleQuery(BaseModel):
 class RoleWithPermissions(RoleOut):
     """包含权限的角色模型"""
     permissions: List['PermissionOut'] = Field(default_factory=list, description="角色权限列表")
-
-
-# 前向引用处理
-from .auth_permission import PermissionOut
-RoleWithPermissions.model_rebuild()

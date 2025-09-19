@@ -2,7 +2,7 @@
 认证服务 - JWT工具类
 """
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 import jwt
 from saturn_mousehunter_shared.log.logger import get_logger
 from infrastructure.config.app_config import JWTConfig

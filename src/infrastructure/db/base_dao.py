@@ -1,7 +1,6 @@
 """
 认证服务 - 基础数据访问对象
 """
-import asyncio
 from typing import Any, List, Optional, Dict
 from contextlib import asynccontextmanager
 import asyncpg

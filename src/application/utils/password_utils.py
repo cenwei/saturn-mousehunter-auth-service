@@ -4,9 +4,7 @@
 import hashlib
 import secrets
 import string
-from typing import Optional
 from passlib.context import CryptContext
-from passlib.hash import bcrypt
 from saturn_mousehunter_shared.log.logger import get_logger
 
 log = get_logger(__name__)

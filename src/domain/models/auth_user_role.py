@@ -11,6 +11,7 @@ class UserType(str, Enum):
     """用户类型"""
     ADMIN = "ADMIN"      # 管理员用户
     TENANT = "TENANT"    # 租户用户
+    LIMITED = "LIMITED"  # 受限用户
 
 
 class UserRoleBase(BaseModel):

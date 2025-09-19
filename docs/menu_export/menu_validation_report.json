@@ -1,0 +1,15 @@
+{
+  "is_valid": true,
+  "errors": [],
+  "warnings": [
+    "未使用的权限映射: ['trading_calendar:write']"
+  ],
+  "summary": {
+    "total_menus": 23,
+    "unique_permissions": 22,
+    "mapped_permissions": 23,
+    "unique_paths": 23,
+    "errors_count": 0,
+    "warnings_count": 1
+  }
+}

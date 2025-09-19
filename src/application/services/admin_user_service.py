@@ -2,7 +2,6 @@
 认证服务 - 管理员用户服务
 """
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 
 from saturn_mousehunter_shared.aop.decorators import measure
 from saturn_mousehunter_shared.log.logger import get_logger
@@ -12,6 +11,7 @@ from domain.models.auth_admin_user import (
     AdminUserLogin, AdminUserResponse
 )
 from domain.models.auth_user_role import UserType
+from domain.models.auth_audit_log import AuditLogIn
 from application.utils import PasswordUtils, JWTUtils
 
 log = get_logger(__name__)
@@ -56,15 +56,15 @@ class AdminUserService:
         admin_user = await self.admin_user_repo.create(user_data)
 
         # 记录审计日志
-        await self.audit_log_repo.create({
-            "user_id": created_by,
-            "user_type": UserType.ADMIN,
-            "action": "CREATE_ADMIN_USER",
-            "resource": "admin_user",
-            "resource_id": admin_user.id,
-            "details": {"username": admin_user.username, "email": admin_user.email},
-            "success": True
-        })
+        await self.audit_log_repo.create(AuditLogIn(
+            user_id=created_by,
+            user_type=UserType.ADMIN,
+            action="CREATE_ADMIN_USER",
+            resource="admin_user",
+            resource_id=admin_user.id,
+            details={"username": admin_user.username, "email": admin_user.email},
+            success=True
+        ))
 
         log.info(f"Created admin user: {admin_user.username} (ID: {admin_user.id})")
         return admin_user
@@ -78,15 +78,15 @@ class AdminUserService:
 
         # 先尝试用户名
         if "@" not in login_data.username:
-            admin_user = await self.admin_user_repo.get_by_username(login_data.username)
+            admin_user = await self.admin_user_repo.get_by_username_for_auth(login_data.username)
 
         # 如果未找到，尝试邮箱
         if not admin_user and "@" in login_data.username:
-            admin_user = await self.admin_user_repo.get_by_email(login_data.username)
+            admin_user = await self.admin_user_repo.get_by_email_for_auth(login_data.username)
 
         # 验证用户存在且密码正确
         if not admin_user or not PasswordUtils.verify_password(
-            login_data.password, admin_user.password_hash if hasattr(admin_user, 'password_hash') else ""
+            login_data.password, admin_user.password_hash
         ):
             # 记录失败的登录尝试
             await self.audit_log_repo.log_login_attempt(
@@ -139,8 +139,22 @@ class AdminUserService:
 
         log.info(f"Admin user authenticated: {admin_user.username}")
 
+        # 转换为外部安全模型（不包含password_hash）
+        safe_user = AdminUserOut(
+            id=admin_user.id,
+            username=admin_user.username,
+            email=admin_user.email,
+            full_name=admin_user.full_name,
+            is_active=admin_user.is_active,
+            is_superuser=admin_user.is_superuser,
+            user_type=admin_user.user_type,
+            last_login_at=admin_user.last_login_at,
+            created_at=admin_user.created_at,
+            updated_at=admin_user.updated_at
+        )
+
         return AdminUserResponse(
-            user=admin_user,
+            user=safe_user,
             access_token=token_data["access_token"],
             refresh_token=token_data["refresh_token"],
             token_type=token_data["token_type"],
@@ -161,47 +175,56 @@ class AdminUserService:
     async def update_admin_user(self, user_id: str, update_data: AdminUserUpdate,
                                updated_by: str = None) -> Optional[AdminUserOut]:
         """更新管理员用户"""
-        # 获取现有用户
-        existing_user = await self.admin_user_repo.get_by_id(user_id)
-        if not existing_user:
-            raise ValueError("用户不存在")
+        try:
+            # 获取现有用户
+            existing_user = await self.admin_user_repo.get_by_id(user_id)
+            if not existing_user:
+                return None
 
-        # 如果更新邮箱，检查邮箱是否被其他用户使用
-        if update_data.email and update_data.email != existing_user.email:
-            existing_email = await self.admin_user_repo.get_by_email(update_data.email)
-            if existing_email and existing_email.id != user_id:
-                raise ValueError(f"邮箱 '{update_data.email}' 已被其他用户使用")
+            # 如果更新邮箱，检查邮箱是否被其他用户使用
+            if update_data.email and update_data.email != existing_user.email:
+                existing_email = await self.admin_user_repo.get_by_email(update_data.email)
+                if existing_email and existing_email.id != user_id:
+                    raise ValueError(f"邮箱 '{update_data.email}' 已被其他用户使用")
 
-        # 如果更新密码，验证密码强度
-        if update_data.password:
-            is_strong, errors = PasswordUtils.validate_password_strength(update_data.password)
-            if not is_strong:
-                raise ValueError(f"密码强度不足: {'; '.join(errors)}")
-            update_data.password_hash = PasswordUtils.hash_password(update_data.password)
-
-        # 更新用户
-        updated_user = await self.admin_user_repo.update(user_id, update_data)
-
-        if updated_user:
-            # 记录审计日志
-            changes = {k: v for k, v in update_data.dict(exclude_unset=True).items()
-                      if k not in ['password', 'password_hash']}
+            # 如果更新密码，验证密码强度并哈希
             if update_data.password:
-                changes['password_updated'] = True
+                is_strong, errors = PasswordUtils.validate_password_strength(update_data.password)
+                if not is_strong:
+                    raise ValueError(f"密码强度不足: {'; '.join(errors)}")
+                update_data.password_hash = PasswordUtils.hash_password(update_data.password)
+                # 清除原始密码字段，避免传递到数据库
+                update_data.password = None
 
-            await self.audit_log_repo.create({
-                "user_id": updated_by,
-                "user_type": UserType.ADMIN,
-                "action": "UPDATE_ADMIN_USER",
-                "resource": "admin_user",
-                "resource_id": user_id,
-                "details": changes,
-                "success": True
-            })
+            # 更新用户
+            updated_user = await self.admin_user_repo.update(user_id, update_data)
 
-            log.info(f"Updated admin user: {user_id}")
+            if updated_user:
+                # 记录审计日志
+                changes = {k: v for k, v in update_data.dict(exclude_unset=True).items()
+                          if k not in ['password', 'password_hash'] and v is not None}
+                if update_data.password_hash:
+                    changes['password_updated'] = True
 
-        return updated_user
+                await self.audit_log_repo.create(AuditLogIn(
+                    user_id=updated_by,
+                    user_type=UserType.ADMIN,
+                    action="UPDATE_ADMIN_USER",
+                    resource="admin_user",
+                    resource_id=user_id,
+                    details=changes,
+                    success=True
+                ))
+
+                log.info(f"Updated admin user: {user_id}")
+
+            return updated_user
+
+        except Exception as e:
+            log.error(f"Failed to update admin user {user_id}: {str(e)}")
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"更新用户失败: {str(e)}")
 
     @measure("service_admin_user_delete_seconds")
     async def delete_admin_user(self, user_id: str, deleted_by: str = None) -> bool:
@@ -214,15 +237,15 @@ class AdminUserService:
 
         if success:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": deleted_by,
-                "user_type": UserType.ADMIN,
-                "action": "DELETE_ADMIN_USER",
-                "resource": "admin_user",
-                "resource_id": user_id,
-                "details": {"username": existing_user.username},
-                "success": True
-            })
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=deleted_by,
+                user_type=UserType.ADMIN,
+                action="DELETE_ADMIN_USER",
+                resource="admin_user",
+                resource_id=user_id,
+                details={"username": existing_user.username},
+                success=True
+            ))
 
             log.info(f"Deleted admin user: {user_id}")
 
@@ -242,13 +265,13 @@ class AdminUserService:
     async def change_password(self, user_id: str, old_password: str, new_password: str,
                              changed_by: str = None) -> bool:
         """修改密码"""
-        # 获取用户
-        admin_user = await self.admin_user_repo.get_by_id(user_id)
+        # 获取用户（包含密码哈希以验证旧密码）
+        admin_user = await self._get_user_with_password_hash(user_id)
         if not admin_user:
             raise ValueError("用户不存在")
 
         # 验证旧密码
-        if not PasswordUtils.verify_password(old_password, getattr(admin_user, 'password_hash', '')):
+        if not PasswordUtils.verify_password(old_password, admin_user.password_hash):
             raise ValueError("当前密码不正确")
 
         # 验证新密码强度
@@ -259,24 +282,42 @@ class AdminUserService:
         # 更新密码
         password_hash = PasswordUtils.hash_password(new_password)
         update_data = AdminUserUpdate(password_hash=password_hash)
-        updated_user = await self.admin_user_repo.update(user_id, update_data)
+        updated_user = await self.admin_user_repo.update(admin_user.id, update_data)
 
         if updated_user:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": changed_by or user_id,
-                "user_type": UserType.ADMIN,
-                "action": "CHANGE_PASSWORD",
-                "resource": "admin_user",
-                "resource_id": user_id,
-                "details": {"self_change": changed_by == user_id or changed_by is None},
-                "success": True
-            })
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=changed_by or admin_user.id,
+                user_type=UserType.ADMIN,
+                action="CHANGE_PASSWORD",
+                resource="admin_user",
+                resource_id=admin_user.id,
+                details={"self_change": changed_by == admin_user.id or changed_by is None},
+                success=True
+            ))
 
-            log.info(f"Password changed for admin user: {user_id}")
+            log.info(f"Password changed for admin user: {admin_user.id}")
             return True
 
         return False
+
+    async def _get_user_with_password_hash(self, user_id: str):
+        """内部方法：获取包含密码哈希的用户信息"""
+        # 首先尝试通过ID获取
+        user = await self.admin_user_repo.get_by_id_for_auth(user_id)
+        if user:
+            return user
+
+        # 如果用户ID是用户名格式，尝试通过用户名获取
+        user = await self.admin_user_repo.get_by_username_for_auth(user_id)
+        if user:
+            return user
+
+        # 如果用户ID是email格式，尝试通过邮箱获取
+        if "@" in user_id:
+            return await self.admin_user_repo.get_by_email_for_auth(user_id)
+
+        return None
 
     @measure("service_admin_user_reset_password_seconds")
     async def reset_password(self, user_id: str, new_password: str = None,
@@ -302,15 +343,15 @@ class AdminUserService:
 
         if updated_user:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": reset_by,
-                "user_type": UserType.ADMIN,
-                "action": "RESET_PASSWORD",
-                "resource": "admin_user",
-                "resource_id": user_id,
-                "details": {"username": admin_user.username},
-                "success": True
-            })
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=reset_by,
+                user_type=UserType.ADMIN,
+                action="RESET_PASSWORD",
+                resource="admin_user",
+                resource_id=user_id,
+                details={"username": admin_user.username},
+                success=True
+            ))
 
             log.info(f"Password reset for admin user: {user_id}")
             return new_password

@@ -2,7 +2,6 @@
 认证服务 - 租户用户服务
 """
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 
 from saturn_mousehunter_shared.aop.decorators import measure
 from saturn_mousehunter_shared.log.logger import get_logger
@@ -12,6 +11,7 @@ from domain.models.auth_tenant_user import (
     TenantUserLogin, TenantUserResponse
 )
 from domain.models.auth_user_role import UserType
+from domain.models.auth_audit_log import AuditLogIn
 from application.utils import PasswordUtils, JWTUtils
 
 log = get_logger(__name__)
@@ -60,19 +60,19 @@ class TenantUserService:
         tenant_user = await self.tenant_user_repo.create(user_data)
 
         # 记录审计日志
-        await self.audit_log_repo.create({
-            "user_id": created_by,
-            "user_type": UserType.ADMIN,  # 通常由管理员创建
-            "action": "CREATE_TENANT_USER",
-            "resource": "tenant_user",
-            "resource_id": tenant_user.id,
-            "details": {
+        await self.audit_log_repo.create(AuditLogIn(
+            user_id=created_by,
+            user_type=UserType.ADMIN,  # 通常由管理员创建
+            action="CREATE_TENANT_USER",
+            resource="tenant_user",
+            resource_id=tenant_user.id,
+            details={
                 "tenant_id": tenant_user.tenant_id,
                 "username": tenant_user.username,
                 "email": tenant_user.email
             },
-            "success": True
-        })
+            success=True
+        ))
 
         log.info(f"Created tenant user: {tenant_user.username} in tenant: {tenant_user.tenant_id}")
         return tenant_user
@@ -174,49 +174,58 @@ class TenantUserService:
     async def update_tenant_user(self, user_id: str, update_data: TenantUserUpdate,
                                 updated_by: str = None) -> Optional[TenantUserOut]:
         """更新租户用户"""
-        # 获取现有用户
-        existing_user = await self.tenant_user_repo.get_by_id(user_id)
-        if not existing_user:
-            raise ValueError("用户不存在")
+        try:
+            # 获取现有用户
+            existing_user = await self.tenant_user_repo.get_by_id(user_id)
+            if not existing_user:
+                return None
 
-        # 如果更新邮箱，检查租户内邮箱是否被其他用户使用
-        if update_data.email and update_data.email != existing_user.email:
-            existing_email = await self.tenant_user_repo.get_by_email(
-                existing_user.tenant_id, update_data.email
-            )
-            if existing_email and existing_email.id != user_id:
-                raise ValueError(f"租户内邮箱 '{update_data.email}' 已被其他用户使用")
+            # 如果更新邮箱，检查租户内邮箱是否被其他用户使用
+            if update_data.email and update_data.email != existing_user.email:
+                existing_email = await self.tenant_user_repo.get_by_email(
+                    existing_user.tenant_id, update_data.email
+                )
+                if existing_email and existing_email.id != user_id:
+                    raise ValueError(f"租户内邮箱 '{update_data.email}' 已被其他用户使用")
 
-        # 如果更新密码，验证密码强度
-        if update_data.password:
-            is_strong, errors = PasswordUtils.validate_password_strength(update_data.password)
-            if not is_strong:
-                raise ValueError(f"密码强度不足: {'; '.join(errors)}")
-            update_data.password_hash = PasswordUtils.hash_password(update_data.password)
-
-        # 更新用户
-        updated_user = await self.tenant_user_repo.update(user_id, update_data)
-
-        if updated_user:
-            # 记录审计日志
-            changes = {k: v for k, v in update_data.dict(exclude_unset=True).items()
-                      if k not in ['password', 'password_hash']}
+            # 如果更新密码，验证密码强度并哈希
             if update_data.password:
-                changes['password_updated'] = True
+                is_strong, errors = PasswordUtils.validate_password_strength(update_data.password)
+                if not is_strong:
+                    raise ValueError(f"密码强度不足: {'; '.join(errors)}")
+                update_data.password_hash = PasswordUtils.hash_password(update_data.password)
+                # 清除原始密码字段，避免传递到数据库
+                update_data.password = None
 
-            await self.audit_log_repo.create({
-                "user_id": updated_by,
-                "user_type": UserType.TENANT if updated_by == user_id else UserType.ADMIN,
-                "action": "UPDATE_TENANT_USER",
-                "resource": "tenant_user",
-                "resource_id": user_id,
-                "details": changes,
-                "success": True
-            })
+            # 更新用户
+            updated_user = await self.tenant_user_repo.update(user_id, update_data)
 
-            log.info(f"Updated tenant user: {user_id}")
+            if updated_user:
+                # 记录审计日志
+                changes = {k: v for k, v in update_data.dict(exclude_unset=True).items()
+                          if k not in ['password', 'password_hash'] and v is not None}
+                if update_data.password_hash:
+                    changes['password_updated'] = True
 
-        return updated_user
+                await self.audit_log_repo.create(AuditLogIn(
+                    user_id=updated_by,
+                    user_type=UserType.TENANT if updated_by == user_id else UserType.ADMIN,
+                    action="UPDATE_TENANT_USER",
+                    resource="tenant_user",
+                    resource_id=user_id,
+                    details=changes,
+                    success=True
+                ))
+
+                log.info(f"Updated tenant user: {user_id}")
+
+            return updated_user
+
+        except Exception as e:
+            log.error(f"Failed to update tenant user {user_id}: {str(e)}")
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"更新用户失败: {str(e)}")
 
     @measure("service_tenant_user_delete_seconds")
     async def delete_tenant_user(self, user_id: str, deleted_by: str = None) -> bool:
@@ -229,18 +238,18 @@ class TenantUserService:
 
         if success:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": deleted_by,
-                "user_type": UserType.ADMIN,  # 通常由管理员删除
-                "action": "DELETE_TENANT_USER",
-                "resource": "tenant_user",
-                "resource_id": user_id,
-                "details": {
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=deleted_by,
+                user_type=UserType.ADMIN,  # 通常由管理员删除
+                action="DELETE_TENANT_USER",
+                resource="tenant_user",
+                resource_id=user_id,
+                details={
                     "tenant_id": existing_user.tenant_id,
                     "username": existing_user.username
                 },
-                "success": True
-            })
+                success=True
+            ))
 
             log.info(f"Deleted tenant user: {user_id}")
 
@@ -286,15 +295,15 @@ class TenantUserService:
 
         if updated_user:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": changed_by or user_id,
-                "user_type": UserType.TENANT,
-                "action": "CHANGE_PASSWORD",
-                "resource": "tenant_user",
-                "resource_id": user_id,
-                "details": {"self_change": changed_by == user_id or changed_by is None},
-                "success": True
-            })
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=changed_by or user_id,
+                user_type=UserType.TENANT,
+                action="CHANGE_PASSWORD",
+                resource="tenant_user",
+                resource_id=user_id,
+                details={"self_change": changed_by == user_id or changed_by is None},
+                success=True
+            ))
 
             log.info(f"Password changed for tenant user: {user_id}")
             return True
@@ -325,18 +334,18 @@ class TenantUserService:
 
         if updated_user:
             # 记录审计日志
-            await self.audit_log_repo.create({
-                "user_id": reset_by,
-                "user_type": UserType.ADMIN,
-                "action": "RESET_PASSWORD",
-                "resource": "tenant_user",
-                "resource_id": user_id,
-                "details": {
+            await self.audit_log_repo.create(AuditLogIn(
+                user_id=reset_by,
+                user_type=UserType.ADMIN,
+                action="RESET_PASSWORD",
+                resource="tenant_user",
+                resource_id=user_id,
+                details={
                     "tenant_id": tenant_user.tenant_id,
                     "username": tenant_user.username
                 },
-                "success": True
-            })
+                success=True
+            ))
 
             log.info(f"Password reset for tenant user: {user_id}")
             return new_password

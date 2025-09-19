@@ -2,7 +2,7 @@
 认证服务 - 应用配置
 """
 import os
-from typing import List, Optional
+from typing import List
 from dataclasses import dataclass
 from saturn_mousehunter_shared.log.logger import get_logger
 

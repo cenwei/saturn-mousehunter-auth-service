@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "total_tests": 5,
+    "passed": 5,
+    "partial": 0,
+    "failed": 0,
+    "success_rate": 1.0
+  },
+  "results": {
+    "configuration": {
+      "status": "passed",
+      "total_menus": 23,
+      "root_menus": 19,
+      "total_permissions": 23,
+      "unique_ids": true,
+      "unique_paths": true
+    },
+    "server_apis": {
+      "status": "passed",
+      "health_check": true,
+      "openapi_schema": true,
+      "menu_endpoints": {
+        "/api/v1/menus/tree": true,
+        "/api/v1/auth/user-menus": true,
+        "/api/v1/menus": true
+      }
+    },
+    "permission_system": {
+      "status": "passed",
+      "user_permissions": {
+        "ADMIN": {
+          "permissions_count": 23,
+          "accessible_menus": 19,
+          "coverage_percentage": 100.0
+        },
+        "TENANT": {
+          "permissions_count": 11,
+          "accessible_menus": 10,
+          "coverage_percentage": 47.83
+        },
+        "LIMITED": {
+          "permissions_count": 1,
+          "accessible_menus": 1,
+          "coverage_percentage": 4.35
+        }
+      }
+    },
+    "user_scenarios": {
+      "status": "passed",
+      "scenarios": {
+        "admin_full_access": {
+          "passed": true,
+          "accessible_menus": 23,
+          "expected_menus": 23
+        },
+        "tenant_limited_access": {
+          "passed": true,
+          "accessible_menus": 11
+        },
+        "limited_minimal_access": {
+          "passed": true,
+          "accessible_menus": 1
+        }
+      }
+    },
+    "data_export": {
+      "status": "passed",
+      "exported_files": [
+        "test_export/test_frontend_config.json",
+        "test_export/test_statistics.json"
+      ]
+    }
+  },
+  "generated_at": "2025-09-19T23:59:25.938216"
+}

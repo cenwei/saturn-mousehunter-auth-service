@@ -37,7 +37,28 @@ class AuditLogOut(AuditLogBase):
     @classmethod
     def from_dict(cls, data: dict) -> 'AuditLogOut':
         """从字典创建对象"""
-        return cls(**data)
+        import json
+        from ipaddress import IPv4Address, IPv6Address
+
+        # 创建数据副本避免修改原始数据
+        processed_data = data.copy()
+
+        # 处理details字段：如果是字符串，尝试解析为JSON
+        if 'details' in processed_data:
+            details = processed_data['details']
+            if isinstance(details, str):
+                try:
+                    processed_data['details'] = json.loads(details)
+                except (json.JSONDecodeError, TypeError):
+                    processed_data['details'] = {}
+
+        # 处理ip_address字段：如果是IP地址对象，转换为字符串
+        if 'ip_address' in processed_data and processed_data['ip_address'] is not None:
+            ip_addr = processed_data['ip_address']
+            if isinstance(ip_addr, (IPv4Address, IPv6Address)):
+                processed_data['ip_address'] = str(ip_addr)
+
+        return cls(**processed_data)
 
 
 class AuditLogQuery(BaseModel):

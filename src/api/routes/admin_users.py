@@ -3,14 +3,16 @@
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from saturn_mousehunter_shared.log.logger import get_logger
 from domain.models.auth_admin_user import (
     AdminUserIn, AdminUserOut, AdminUserUpdate, AdminUserQuery,
     AdminUserLogin, AdminUserResponse
 )
 from application.services import AdminUserService
-from api.dependencies.auth import get_admin_user, require_permissions
+from api.dependencies.auth import get_admin_user
 from api.dependencies.services import get_admin_user_service
 
+log = get_logger(__name__)
 router = APIRouter(prefix="/admin/users", tags=["管理员用户"])
 
 
@@ -21,7 +23,7 @@ async def login(
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """管理员用户登录"""
-    client_ip = request.client.host
+    client_ip = str(request.client.host)
     user_agent = request.headers.get("user-agent")
 
     response = await admin_service.authenticate(
@@ -42,7 +44,7 @@ async def login(
 @router.post("/", response_model=AdminUserOut)
 async def create_admin_user(
     user_data: AdminUserIn,
-    current_user: dict = Depends(require_permissions(["user:write"])),
+    current_user: dict = Depends(get_admin_user),
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """创建管理员用户"""
@@ -73,10 +75,20 @@ async def get_current_admin_profile(
     return profile
 
 
+@router.get("/", response_model=List[AdminUserOut])
+async def list_admin_users(
+    query_params: AdminUserQuery = Depends(),
+    current_user: dict = Depends(get_admin_user),
+    admin_service: AdminUserService = Depends(get_admin_user_service)
+):
+    """获取管理员用户列表"""
+    return await admin_service.list_admin_users(query_params)
+
+
 @router.get("/{user_id}", response_model=AdminUserOut)
-async def get_admin_user(
+async def get_admin_user_detail(
     user_id: str,
-    current_user: dict = Depends(require_permissions(["user:read"])),
+    current_user: dict = Depends(get_admin_user),
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """获取管理员用户详情"""
@@ -93,11 +105,26 @@ async def get_admin_user(
 async def update_admin_user(
     user_id: str,
     update_data: AdminUserUpdate,
-    current_user: dict = Depends(require_permissions(["user:write"])),
+    current_user: dict = Depends(get_admin_user),
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """更新管理员用户"""
     try:
+        # 添加类型检查以确保current_user是字典
+        if not isinstance(current_user, dict):
+            log.error(f"current_user is not a dict, got: {type(current_user)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="认证信息格式错误"
+            )
+
+        if "user_id" not in current_user:
+            log.error(f"current_user missing user_id key, keys: {current_user.keys()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="认证信息不完整"
+            )
+
         user = await admin_service.update_admin_user(
             user_id=user_id,
             update_data=update_data,
@@ -114,12 +141,18 @@ async def update_admin_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except Exception as e:
+        log.error(f"Update admin user failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="更新用户失败，请稍后重试"
+        )
 
 
 @router.delete("/{user_id}")
 async def delete_admin_user(
     user_id: str,
-    current_user: dict = Depends(require_permissions(["user:write"])),
+    current_user: dict = Depends(get_admin_user),
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """删除管理员用户"""
@@ -139,16 +172,6 @@ async def delete_admin_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-
-
-@router.get("/", response_model=List[AdminUserOut])
-async def list_admin_users(
-    query_params: AdminUserQuery = Depends(),
-    current_user: dict = Depends(require_permissions(["user:read"])),
-    admin_service: AdminUserService = Depends(get_admin_user_service)
-):
-    """获取管理员用户列表"""
-    return await admin_service.list_admin_users(query_params)
 
 
 @router.post("/{user_id}/change-password")
@@ -188,7 +211,7 @@ async def change_password(
 async def reset_password(
     user_id: str,
     new_password: str = None,
-    current_user: dict = Depends(require_permissions(["user:write"])),
+    current_user: dict = Depends(get_admin_user),
     admin_service: AdminUserService = Depends(get_admin_user_service)
 ):
     """重置密码（管理员操作）"""

@@ -24,7 +24,8 @@ except ImportError:
 from infrastructure.config import get_app_config
 from infrastructure.db import AsyncDAO
 from infrastructure.config import get_database_config
-from api.routes import admin_users, tenant_users
+from api.routes import admin_users, tenant_users, roles, permissions, auth, menus, menu_management
+from api.dependencies.dao import set_dao
 
 log = get_logger(__name__)
 
@@ -45,6 +46,10 @@ async def lifespan(app: FastAPI):
     log.info(f"启动认证服务 - {app_config.app_name} v{app_config.version}")
     dao = AsyncDAO(db_config.connection_string, db_config.min_connections, db_config.max_connections)
     await dao.init_pool()
+
+    # Set the DAO for dependency injection
+    set_dao(dao)
+
     log.info(f"认证服务已启动 - {app_config.app_name} v{app_config.version}")
 
     yield
@@ -77,18 +82,25 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     """健康检查"""
+    from datetime import datetime, timezone
     db_healthy = await dao.health_check() if dao else False
     return {
         "status": "healthy" if db_healthy else "unhealthy",
         "service": app_config.app_name,
         "version": app_config.version,
-        "database": "connected" if db_healthy else "disconnected"
+        "database": "connected" if db_healthy else "disconnected",
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
 # 注册路由
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin_users.router, prefix="/api/v1")
 app.include_router(tenant_users.router, prefix="/api/v1")
+app.include_router(roles.router, prefix="/api/v1")
+app.include_router(permissions.router, prefix="/api/v1")
+app.include_router(menus.router)  # 菜单权限路由已包含prefix
+app.include_router(menu_management.router)  # 菜单管理路由已包含prefix
 
 
 # 依赖注入工厂函数

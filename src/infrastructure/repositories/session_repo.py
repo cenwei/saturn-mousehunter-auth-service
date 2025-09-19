@@ -163,7 +163,7 @@ class SessionRepo:
         success = result > 0
 
         if success:
-            log.info(f"Deactivated session by token")
+            log.info("Deactivated session by token")
 
         return success
 

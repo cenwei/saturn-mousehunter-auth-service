@@ -243,7 +243,7 @@ class UserRoleRepo:
         """批量分配角色给用户"""
         user_roles = []
 
-        async with self.dao.transaction() as conn:
+        async with self.dao.transaction():
             for role_id in assignment.role_ids:
                 # 检查是否已存在
                 existing = await self._check_user_role_exists(

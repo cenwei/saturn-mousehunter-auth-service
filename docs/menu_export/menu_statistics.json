@@ -1,0 +1,15 @@
+{
+  "total_menus": 19,
+  "total_permissions": 23,
+  "root_menus": 19,
+  "child_menus": 4,
+  "menu_types": {
+    "menu": 23
+  },
+  "permission_distribution": {
+    "ADMIN": 23,
+    "TENANT": 11,
+    "LIMITED": 1
+  },
+  "generated_at": "2025-09-19T23:39:13.840425"
+}

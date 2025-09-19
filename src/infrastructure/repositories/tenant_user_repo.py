@@ -3,7 +3,6 @@
 """
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
 
 from saturn_mousehunter_shared.foundation.ids import make_ulid
 from saturn_mousehunter_shared.aop.decorators import measure, read_only_guard
@@ -94,9 +93,9 @@ class TenantUserRepo:
         params = []
         param_count = 1
 
-        # 动态构建UPDATE语句
+        # 动态构建UPDATE语句，只更新非None的字段
         for field, value in update_data.dict(exclude_unset=True).items():
-            if field != 'updated_at':
+            if field not in ['updated_at', 'password'] and value is not None:
                 set_clauses.append(f"{field} = ${param_count}")
                 params.append(value)
                 param_count += 1
@@ -119,11 +118,15 @@ class TenantUserRepo:
         RETURNING *
         """
 
-        row = await self.dao.fetch_one(query, *params)
-        if row:
-            log.info(f"Updated tenant user: {user_id}")
-            return TenantUserOut.from_dict(dict(row))
-        return None
+        try:
+            row = await self.dao.fetch_one(query, *params)
+            if row:
+                log.info(f"Updated tenant user: {user_id}")
+                return TenantUserOut.from_dict(dict(row))
+            return None
+        except Exception as e:
+            log.error(f"Failed to update tenant user {user_id}: {str(e)}")
+            raise
 
     @measure("db_tenant_user_delete_seconds")
     async def delete(self, user_id: str) -> bool:

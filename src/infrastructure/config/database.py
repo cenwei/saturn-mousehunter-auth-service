@@ -2,7 +2,6 @@
 认证服务 - 数据库配置
 """
 import os
-from typing import Optional
 from dataclasses import dataclass
 from saturn_mousehunter_shared.log.logger import get_logger
 

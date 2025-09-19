@@ -166,7 +166,7 @@ class RolePermissionRepo:
         """批量分配权限给角色"""
         role_permissions = []
 
-        async with self.dao.transaction() as conn:
+        async with self.dao.transaction():
             for permission_id in assignment.permission_ids:
                 # 检查是否已存在
                 existing = await self._check_role_permission_exists(assignment.role_id, permission_id)

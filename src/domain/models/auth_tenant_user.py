@@ -75,6 +75,16 @@ class TenantUserOut(TenantUserBase):
         return cls(**data)
 
 
+class TenantUserInternal(TenantUserOut):
+    """租户用户内部模型（包含敏感信息，仅用于服务内部）"""
+    password_hash: str = Field(..., description="密码哈希值")
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'TenantUserInternal':
+        """从字典创建对象"""
+        return cls(**data)
+
+
 class TenantUserQuery(BaseModel):
     """租户用户查询模型"""
     tenant_id: Optional[str] = Field(None, description="租户ID")

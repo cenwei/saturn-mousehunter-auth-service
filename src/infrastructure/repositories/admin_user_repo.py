@@ -4,13 +4,12 @@
 """
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
 
 from saturn_mousehunter_shared.foundation.ids import make_ulid
 from saturn_mousehunter_shared.aop.decorators import measure, read_only_guard
 from saturn_mousehunter_shared.log.logger import get_logger
 from infrastructure.db.base_dao import AsyncDAO
-from domain.models.auth_admin_user import AdminUserIn, AdminUserOut, AdminUserUpdate, AdminUserQuery
+from domain.models.auth_admin_user import AdminUserIn, AdminUserOut, AdminUserUpdate, AdminUserQuery, AdminUserInternal
 
 log = get_logger(__name__)
 
@@ -88,6 +87,39 @@ class AdminUserRepo:
             return AdminUserOut.from_dict(dict(row))
         return None
 
+    @read_only_guard()
+    @measure("db_admin_user_get_for_auth_seconds")
+    async def get_by_username_for_auth(self, username: str) -> Optional[AdminUserInternal]:
+        """根据用户名获取管理员用户（用于认证，包含密码哈希）"""
+        query = f"SELECT * FROM {TABLE} WHERE username = $1"
+        row = await self.dao.fetch_one(query, username)
+
+        if row:
+            return AdminUserInternal.from_dict(dict(row))
+        return None
+
+    @read_only_guard()
+    @measure("db_admin_user_get_by_email_for_auth_seconds")
+    async def get_by_email_for_auth(self, email: str) -> Optional[AdminUserInternal]:
+        """根据邮箱获取管理员用户（用于认证，包含密码哈希）"""
+        query = f"SELECT * FROM {TABLE} WHERE email = $1"
+        row = await self.dao.fetch_one(query, email)
+
+        if row:
+            return AdminUserInternal.from_dict(dict(row))
+        return None
+
+    @read_only_guard()
+    @measure("db_admin_user_get_by_id_for_auth_seconds")
+    async def get_by_id_for_auth(self, user_id: str) -> Optional[AdminUserInternal]:
+        """根据ID获取管理员用户（用于认证，包含密码哈希）"""
+        query = f"SELECT * FROM {TABLE} WHERE id = $1"
+        row = await self.dao.fetch_one(query, user_id)
+
+        if row:
+            return AdminUserInternal.from_dict(dict(row))
+        return None
+
     @measure("db_admin_user_update_seconds")
     async def update(self, user_id: str, update_data: AdminUserUpdate) -> Optional[AdminUserOut]:
         """更新管理员用户"""
@@ -95,9 +127,9 @@ class AdminUserRepo:
         params = []
         param_count = 1
 
-        # 动态构建UPDATE语句
+        # 动态构建UPDATE语句，只更新非None的字段
         for field, value in update_data.dict(exclude_unset=True).items():
-            if field != 'updated_at':
+            if field not in ['updated_at', 'password'] and value is not None:
                 set_clauses.append(f"{field} = ${param_count}")
                 params.append(value)
                 param_count += 1
@@ -120,11 +152,15 @@ class AdminUserRepo:
         RETURNING *
         """
 
-        row = await self.dao.fetch_one(query, *params)
-        if row:
-            log.info(f"Updated admin user: {user_id}")
-            return AdminUserOut.from_dict(dict(row))
-        return None
+        try:
+            row = await self.dao.fetch_one(query, *params)
+            if row:
+                log.info(f"Updated admin user: {user_id}")
+                return AdminUserOut.from_dict(dict(row))
+            return None
+        except Exception as e:
+            log.error(f"Failed to update admin user {user_id}: {str(e)}")
+            raise
 
     @measure("db_admin_user_delete_seconds")
     async def delete(self, user_id: str) -> bool:

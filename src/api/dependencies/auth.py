@@ -8,6 +8,7 @@ from application.utils import JWTUtils
 from infrastructure.config import get_jwt_config
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -28,6 +29,24 @@ async def get_current_user(
         )
 
     return user_info
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)
+) -> Optional[dict]:
+    """获取当前认证用户（可选，不会抛出异常）"""
+    if not credentials:
+        return None
+
+    jwt_config = get_jwt_config()
+    jwt_utils = JWTUtils(jwt_config)
+
+    try:
+        token = credentials.credentials
+        user_info = jwt_utils.extract_user_info(token)
+        return user_info
+    except Exception:
+        return None
 
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)) -> dict:

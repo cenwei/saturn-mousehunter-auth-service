@@ -1,0 +1,340 @@
+[
+  {
+    "id": "dashboard",
+    "name": "dashboard",
+    "title": "仪表盘",
+    "path": "/dashboard",
+    "icon": "dashboard",
+    "permission": "menu:dashboard",
+    "menu_type": "menu",
+    "sort_order": 1,
+    "is_hidden": false,
+    "meta": {
+      "title": "仪表盘",
+      "keepAlive": true
+    },
+    "children": []
+  },
+  {
+    "id": "user_management",
+    "name": "user_management",
+    "title": "用户管理",
+    "path": "/users",
+    "icon": "users",
+    "permission": "menu:user_management",
+    "menu_type": "menu",
+    "sort_order": 2,
+    "is_hidden": false,
+    "meta": {
+      "title": "用户管理"
+    },
+    "children": [
+      {
+        "id": "admin_users",
+        "name": "admin_users",
+        "title": "管理员用户",
+        "path": "/users/admin",
+        "icon": null,
+        "permission": "user:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "管理员用户"
+        },
+        "children": []
+      },
+      {
+        "id": "tenant_users",
+        "name": "tenant_users",
+        "title": "租户用户",
+        "path": "/users/tenant",
+        "icon": null,
+        "permission": "user:read",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "租户用户"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "role_management",
+    "name": "role_management",
+    "title": "角色管理",
+    "path": "/roles",
+    "icon": "role",
+    "permission": "menu:role_management",
+    "menu_type": "menu",
+    "sort_order": 3,
+    "is_hidden": false,
+    "meta": {
+      "title": "角色管理"
+    },
+    "children": [
+      {
+        "id": "role_list",
+        "name": "role_list",
+        "title": "角色列表",
+        "path": "/roles/list",
+        "icon": null,
+        "permission": "role:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "角色列表"
+        },
+        "children": []
+      },
+      {
+        "id": "permission_list",
+        "name": "permission_list",
+        "title": "权限列表",
+        "path": "/roles/permissions",
+        "icon": null,
+        "permission": "role:read",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "权限列表"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "strategy_management",
+    "name": "strategy_management",
+    "title": "策略管理",
+    "path": "/strategy",
+    "icon": "strategy",
+    "permission": "menu:strategy",
+    "menu_type": "menu",
+    "sort_order": 4,
+    "is_hidden": false,
+    "meta": {
+      "title": "策略管理"
+    },
+    "children": [
+      {
+        "id": "strategy_list",
+        "name": "strategy_list",
+        "title": "策略列表",
+        "path": "/strategy/list",
+        "icon": null,
+        "permission": "strategy:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "策略列表"
+        },
+        "children": []
+      },
+      {
+        "id": "strategy_create",
+        "name": "strategy_create",
+        "title": "创建策略",
+        "path": "/strategy/create",
+        "icon": null,
+        "permission": "strategy:write",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "创建策略"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "risk_management",
+    "name": "risk_management",
+    "title": "风控管理",
+    "path": "/risk",
+    "icon": "risk",
+    "permission": "menu:risk",
+    "menu_type": "menu",
+    "sort_order": 5,
+    "is_hidden": false,
+    "meta": {
+      "title": "风控管理"
+    },
+    "children": [
+      {
+        "id": "risk_monitor",
+        "name": "risk_monitor",
+        "title": "风控监控",
+        "path": "/risk/monitor",
+        "icon": null,
+        "permission": "risk:monitor",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "风控监控"
+        },
+        "children": []
+      },
+      {
+        "id": "risk_rules",
+        "name": "risk_rules",
+        "title": "风控规则",
+        "path": "/risk/rules",
+        "icon": null,
+        "permission": "risk:write",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "风控规则"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "system_management",
+    "name": "system_management",
+    "title": "系统设置",
+    "path": "/system",
+    "icon": "system",
+    "permission": "menu:system",
+    "menu_type": "menu",
+    "sort_order": 6,
+    "is_hidden": false,
+    "meta": {
+      "title": "系统设置"
+    },
+    "children": [
+      {
+        "id": "system_config",
+        "name": "system_config",
+        "title": "系统配置",
+        "path": "/system/config",
+        "icon": null,
+        "permission": "system:config",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "系统配置"
+        },
+        "children": []
+      },
+      {
+        "id": "system_monitor",
+        "name": "system_monitor",
+        "title": "系统监控",
+        "path": "/system/monitor",
+        "icon": null,
+        "permission": "system:monitor",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "系统监控"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "reports",
+    "name": "reports",
+    "title": "报表中心",
+    "path": "/reports",
+    "icon": "reports",
+    "permission": "menu:reports",
+    "menu_type": "menu",
+    "sort_order": 7,
+    "is_hidden": false,
+    "meta": {
+      "title": "报表中心"
+    },
+    "children": [
+      {
+        "id": "user_reports",
+        "name": "user_reports",
+        "title": "用户报表",
+        "path": "/reports/users",
+        "icon": null,
+        "permission": "report:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "用户报表"
+        },
+        "children": []
+      },
+      {
+        "id": "strategy_reports",
+        "name": "strategy_reports",
+        "title": "策略报表",
+        "path": "/reports/strategy",
+        "icon": null,
+        "permission": "report:read",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "策略报表"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "audit_logs",
+    "name": "audit_logs",
+    "title": "审计日志",
+    "path": "/audit",
+    "icon": "audit",
+    "permission": "menu:audit",
+    "menu_type": "menu",
+    "sort_order": 8,
+    "is_hidden": false,
+    "meta": {
+      "title": "审计日志"
+    },
+    "children": [
+      {
+        "id": "login_logs",
+        "name": "login_logs",
+        "title": "登录日志",
+        "path": "/audit/login",
+        "icon": null,
+        "permission": "audit:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "meta": {
+          "title": "登录日志"
+        },
+        "children": []
+      },
+      {
+        "id": "operation_logs",
+        "name": "operation_logs",
+        "title": "操作日志",
+        "path": "/audit/operation",
+        "icon": null,
+        "permission": "audit:read",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "meta": {
+          "title": "操作日志"
+        },
+        "children": []
+      }
+    ]
+  }
+]
