@@ -1,0 +1,444 @@
+[
+  {
+    "id": "dashboard",
+    "name": "dashboard",
+    "title": "总览",
+    "title_en": "Dashboard",
+    "path": "/",
+    "icon": "dashboard",
+    "emoji": "🏠",
+    "permission": "menu:dashboard",
+    "menu_type": "menu",
+    "sort_order": 1,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "总览",
+      "title_en": "Dashboard",
+      "keepAlive": true
+    },
+    "children": []
+  },
+  {
+    "id": "market_config",
+    "name": "market_config",
+    "title": "市场配置",
+    "title_en": "Market Config",
+    "path": "/market-config",
+    "icon": "market",
+    "emoji": "📊",
+    "permission": "menu:market_config",
+    "menu_type": "menu",
+    "sort_order": 2,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "市场配置",
+      "title_en": "Market Config"
+    },
+    "children": []
+  },
+  {
+    "id": "trading_calendar",
+    "name": "trading_calendar",
+    "title": "交易日历管理",
+    "title_en": "Trading Calendar",
+    "path": "/trading-calendar",
+    "icon": "calendar",
+    "emoji": "📅",
+    "permission": "menu:trading_calendar",
+    "menu_type": "menu",
+    "sort_order": 3,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "交易日历管理",
+      "title_en": "Trading Calendar"
+    },
+    "children": [
+      {
+        "id": "trading_calendar_table",
+        "name": "trading_calendar_table",
+        "title": "交易日历表格",
+        "title_en": "Trading Calendar Table",
+        "path": "/trading-calendar-table",
+        "icon": null,
+        "emoji": null,
+        "permission": "trading_calendar:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "status": "active",
+        "meta": {
+          "title": "交易日历表格",
+          "title_en": "Trading Calendar Table"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "instrument_pool",
+    "name": "instrument_pool",
+    "title": "标的池管理",
+    "title_en": "Instrument Pool",
+    "path": "/instrument-pool",
+    "icon": "pool",
+    "emoji": "📈",
+    "permission": "menu:instrument_pool",
+    "menu_type": "menu",
+    "sort_order": 4,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "标的池管理",
+      "title_en": "Instrument Pool"
+    },
+    "children": []
+  },
+  {
+    "id": "benchmark_pool",
+    "name": "benchmark_pool",
+    "title": "基准池管理",
+    "title_en": "Pool Management",
+    "path": "/benchmark-pool",
+    "icon": "pool",
+    "emoji": "🎯",
+    "permission": "menu:benchmark_pool",
+    "menu_type": "menu",
+    "sort_order": 5,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "基准池管理",
+      "title_en": "Pool Management"
+    },
+    "children": []
+  },
+  {
+    "id": "pool_intersection",
+    "name": "pool_intersection",
+    "title": "标的池交集",
+    "title_en": "Pool Intersection",
+    "path": "/pool-intersection",
+    "icon": "intersection",
+    "emoji": "🎯",
+    "permission": "menu:pool_intersection",
+    "menu_type": "menu",
+    "sort_order": 6,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "标的池交集",
+      "title_en": "Pool Intersection"
+    },
+    "children": []
+  },
+  {
+    "id": "proxy_pool",
+    "name": "proxy_pool",
+    "title": "代理池管理",
+    "title_en": "Proxy Pool",
+    "path": "/proxy-pool",
+    "icon": "proxy",
+    "emoji": "🌐",
+    "permission": "menu:proxy_pool",
+    "menu_type": "menu",
+    "sort_order": 7,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "代理池管理",
+      "title_en": "Proxy Pool",
+      "recently_updated": true
+    },
+    "children": []
+  },
+  {
+    "id": "kline_management",
+    "name": "kline_management",
+    "title": "K线数据管理",
+    "title_en": "K-Line Management",
+    "path": "/kline",
+    "icon": "kline",
+    "emoji": "📈",
+    "permission": "menu:kline_management",
+    "menu_type": "menu",
+    "sort_order": 8,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "K线数据管理",
+      "title_en": "K-Line Management"
+    },
+    "children": []
+  },
+  {
+    "id": "cookie_management",
+    "name": "cookie_management",
+    "title": "Cookie管理",
+    "title_en": "Cookie Management",
+    "path": "/cookie-management",
+    "icon": "cookie",
+    "emoji": "🍪",
+    "permission": "menu:cookie_management",
+    "menu_type": "menu",
+    "sort_order": 9,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "Cookie管理",
+      "title_en": "Cookie Management"
+    },
+    "children": []
+  },
+  {
+    "id": "auth_service",
+    "name": "auth_service",
+    "title": "认证服务管理",
+    "title_en": "Auth Service",
+    "path": "/auth-service",
+    "icon": "auth",
+    "emoji": "🔐",
+    "permission": "menu:auth_service",
+    "menu_type": "menu",
+    "sort_order": 10,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "认证服务管理",
+      "title_en": "Auth Service"
+    },
+    "children": []
+  },
+  {
+    "id": "user_management",
+    "name": "user_management",
+    "title": "用户管理",
+    "title_en": "User Management",
+    "path": "/user-management",
+    "icon": "users",
+    "emoji": "👤",
+    "permission": "menu:user_management",
+    "menu_type": "menu",
+    "sort_order": 11,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "用户管理",
+      "title_en": "User Management"
+    },
+    "children": [
+      {
+        "id": "admin_users",
+        "name": "admin_users",
+        "title": "管理员用户",
+        "title_en": "Admin Users",
+        "path": "/user-management/admin",
+        "icon": null,
+        "emoji": null,
+        "permission": "user:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "status": "active",
+        "meta": {
+          "title": "管理员用户",
+          "title_en": "Admin Users"
+        },
+        "children": []
+      },
+      {
+        "id": "tenant_users",
+        "name": "tenant_users",
+        "title": "租户用户",
+        "title_en": "Tenant Users",
+        "path": "/user-management/tenant",
+        "icon": null,
+        "emoji": null,
+        "permission": "user:read",
+        "menu_type": "menu",
+        "sort_order": 2,
+        "is_hidden": false,
+        "status": "active",
+        "meta": {
+          "title": "租户用户",
+          "title_en": "Tenant Users"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "role_management",
+    "name": "role_management",
+    "title": "角色管理",
+    "title_en": "Role Management",
+    "path": "/role-management",
+    "icon": "role",
+    "emoji": "👥",
+    "permission": "menu:role_management",
+    "menu_type": "menu",
+    "sort_order": 12,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "角色管理",
+      "title_en": "Role Management"
+    },
+    "children": [
+      {
+        "id": "role_list",
+        "name": "role_list",
+        "title": "角色列表",
+        "title_en": "Role List",
+        "path": "/role-management/list",
+        "icon": null,
+        "emoji": null,
+        "permission": "role:read",
+        "menu_type": "menu",
+        "sort_order": 1,
+        "is_hidden": false,
+        "status": "active",
+        "meta": {
+          "title": "角色列表",
+          "title_en": "Role List"
+        },
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "permission_management",
+    "name": "permission_management",
+    "title": "权限管理",
+    "title_en": "Permission Management",
+    "path": "/permission-management",
+    "icon": "permission",
+    "emoji": "🔐",
+    "permission": "menu:permission_management",
+    "menu_type": "menu",
+    "sort_order": 13,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "权限管理",
+      "title_en": "Permission Management"
+    },
+    "children": []
+  },
+  {
+    "id": "strategy_engine",
+    "name": "strategy_engine",
+    "title": "策略引擎管理",
+    "title_en": "Strategy Engine",
+    "path": "/strategy-engine",
+    "icon": "strategy",
+    "emoji": "🚀",
+    "permission": "menu:strategy_engine",
+    "menu_type": "menu",
+    "sort_order": 14,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "策略引擎管理",
+      "title_en": "Strategy Engine"
+    },
+    "children": []
+  },
+  {
+    "id": "universe",
+    "name": "universe",
+    "title": "标的池",
+    "title_en": "Universe",
+    "path": "/universe",
+    "icon": "universe",
+    "emoji": null,
+    "permission": "menu:universe",
+    "menu_type": "menu",
+    "sort_order": 15,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "标的池",
+      "title_en": "Universe"
+    },
+    "children": []
+  },
+  {
+    "id": "api_explorer",
+    "name": "api_explorer",
+    "title": "接口探索",
+    "title_en": "API Explorer",
+    "path": "/api-explorer",
+    "icon": "api",
+    "emoji": null,
+    "permission": "menu:api_explorer",
+    "menu_type": "menu",
+    "sort_order": 16,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "接口探索",
+      "title_en": "API Explorer"
+    },
+    "children": []
+  },
+  {
+    "id": "table_demo",
+    "name": "table_demo",
+    "title": "表格控件演示",
+    "title_en": "Table Demo",
+    "path": "/table-demo",
+    "icon": "table",
+    "emoji": "📊",
+    "permission": "menu:table_demo",
+    "menu_type": "menu",
+    "sort_order": 17,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "表格控件演示",
+      "title_en": "Table Demo"
+    },
+    "children": []
+  },
+  {
+    "id": "skin_theme_demo",
+    "name": "skin_theme_demo",
+    "title": "皮肤主题演示",
+    "title_en": "Skin Theme Demo",
+    "path": "/skin-theme-demo",
+    "icon": "theme",
+    "emoji": "🎨",
+    "permission": "menu:skin_theme_demo",
+    "menu_type": "menu",
+    "sort_order": 18,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "皮肤主题演示",
+      "title_en": "Skin Theme Demo"
+    },
+    "children": []
+  },
+  {
+    "id": "logs",
+    "name": "logs",
+    "title": "日志",
+    "title_en": "Logs",
+    "path": "/logs",
+    "icon": "logs",
+    "emoji": null,
+    "permission": "menu:logs",
+    "menu_type": "menu",
+    "sort_order": 19,
+    "is_hidden": false,
+    "status": "active",
+    "meta": {
+      "title": "日志",
+      "title_en": "Logs"
+    },
+    "children": []
+  }
+]
