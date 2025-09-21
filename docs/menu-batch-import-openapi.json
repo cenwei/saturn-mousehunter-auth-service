@@ -1,0 +1,819 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Saturn MouseHunter - 菜单批量导入API",
+    "description": "菜单批量导入和管理API接口定义",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Saturn MouseHunter Team",
+      "email": "team@saturn-mousehunter.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://192.168.8.168:8005/api/v1",
+      "description": "认证服务 - 测试环境"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/menus/batch-import": {
+      "post": {
+        "tags": ["菜单管理"],
+        "summary": "批量导入菜单",
+        "description": "批量导入菜单配置，支持增量导入或全量覆盖模式",
+        "security": [{"BearerAuth": ["admin"]}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuBatchImportRequest"
+              },
+              "example": {
+                "menus": [
+                  {
+                    "id": "dashboard",
+                    "name": "dashboard",
+                    "title": "总览",
+                    "title_en": "Dashboard",
+                    "path": "/",
+                    "component": "Dashboard",
+                    "icon": "dashboard",
+                    "emoji": "🏠",
+                    "permission": "menu:dashboard",
+                    "menu_type": "menu",
+                    "sort_order": 1,
+                    "is_hidden": false,
+                    "is_external": false,
+                    "status": "active",
+                    "meta": {
+                      "title": "总览",
+                      "title_en": "Dashboard",
+                      "keepAlive": true
+                    }
+                  },
+                  {
+                    "id": "trading_calendar_table",
+                    "name": "trading_calendar_table",
+                    "title": "交易日历表格",
+                    "title_en": "Trading Calendar Table",
+                    "path": "/trading-calendar-table",
+                    "component": "TradingCalendarTable",
+                    "parent_id": "trading_calendar",
+                    "permission": "trading_calendar:read",
+                    "menu_type": "menu",
+                    "sort_order": 1,
+                    "is_hidden": false,
+                    "is_external": false,
+                    "status": "active",
+                    "meta": {
+                      "title": "交易日历表格",
+                      "title_en": "Trading Calendar Table"
+                    }
+                  }
+                ],
+                "clear_existing": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "批量导入成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "成功导入 2 个菜单",
+                  "data": {
+                    "imported_count": 2,
+                    "clear_existing": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/menus": {
+      "get": {
+        "tags": ["菜单管理"],
+        "summary": "获取菜单列表",
+        "description": "获取菜单列表，支持按父菜单和状态过滤",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "parent_id",
+            "in": "query",
+            "required": false,
+            "description": "父菜单ID，空值获取根菜单",
+            "schema": {
+              "type": "string",
+              "example": "user_management"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "菜单状态过滤",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "disabled"],
+              "example": "active"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "菜单列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MenuItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["菜单管理"],
+        "summary": "创建单个菜单",
+        "description": "创建新的菜单项",
+        "security": [{"BearerAuth": ["admin"]}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "菜单创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/menus/{menu_id}": {
+      "get": {
+        "tags": ["菜单管理"],
+        "summary": "获取菜单详情",
+        "description": "根据菜单ID获取菜单详细信息",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "menu_id",
+            "in": "path",
+            "required": true,
+            "description": "菜单ID",
+            "schema": {
+              "type": "string",
+              "example": "dashboard"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "菜单详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["菜单管理"],
+        "summary": "更新菜单",
+        "description": "更新指定菜单的信息",
+        "security": [{"BearerAuth": ["admin"]}],
+        "parameters": [
+          {
+            "name": "menu_id",
+            "in": "path",
+            "required": true,
+            "description": "菜单ID",
+            "schema": {
+              "type": "string",
+              "example": "dashboard"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "菜单更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["菜单管理"],
+        "summary": "删除菜单",
+        "description": "删除指定菜单",
+        "security": [{"BearerAuth": ["admin"]}],
+        "parameters": [
+          {
+            "name": "menu_id",
+            "in": "path",
+            "required": true,
+            "description": "菜单ID",
+            "schema": {
+              "type": "string",
+              "example": "dashboard"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "菜单删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/menus/tree": {
+      "get": {
+        "tags": ["菜单管理"],
+        "summary": "获取菜单树结构",
+        "description": "获取完整菜单树结构，管理员可查看全部，普通用户仅查看有权限的菜单",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "required": false,
+            "description": "是否包含隐藏菜单",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "菜单树结构",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MenuItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "MenuCreateRequest": {
+        "type": "object",
+        "required": ["id", "name", "title"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "菜单唯一ID",
+            "example": "dashboard"
+          },
+          "name": {
+            "type": "string",
+            "description": "菜单名称",
+            "example": "dashboard"
+          },
+          "title": {
+            "type": "string",
+            "description": "菜单标题（中文）",
+            "example": "总览"
+          },
+          "title_en": {
+            "type": "string",
+            "description": "英文标题",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "description": "路由路径",
+            "example": "/",
+            "nullable": true
+          },
+          "component": {
+            "type": "string",
+            "description": "组件名称",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "description": "图标类名",
+            "example": "dashboard",
+            "nullable": true
+          },
+          "emoji": {
+            "type": "string",
+            "description": "表情图标",
+            "example": "🏠",
+            "nullable": true
+          },
+          "parent_id": {
+            "type": "string",
+            "description": "父菜单ID",
+            "example": "user_management",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "description": "所需权限",
+            "example": "menu:dashboard",
+            "nullable": true
+          },
+          "menu_type": {
+            "type": "string",
+            "enum": ["menu", "button", "tab"],
+            "description": "菜单类型",
+            "example": "menu",
+            "default": "menu"
+          },
+          "sort_order": {
+            "type": "integer",
+            "description": "排序值",
+            "example": 1,
+            "default": 0
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "是否隐藏",
+            "example": false,
+            "default": false
+          },
+          "is_external": {
+            "type": "boolean",
+            "description": "是否外部链接",
+            "example": false,
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled"],
+            "description": "菜单状态",
+            "example": "active",
+            "default": "active"
+          },
+          "meta": {
+            "type": "object",
+            "description": "元数据",
+            "additionalProperties": true,
+            "example": {"title": "总览", "title_en": "Dashboard", "keepAlive": true},
+            "nullable": true
+          }
+        }
+      },
+      "MenuUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "菜单名称",
+            "example": "dashboard"
+          },
+          "title": {
+            "type": "string",
+            "description": "菜单标题（中文）",
+            "example": "总览"
+          },
+          "title_en": {
+            "type": "string",
+            "description": "英文标题",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "description": "路由路径",
+            "example": "/",
+            "nullable": true
+          },
+          "component": {
+            "type": "string",
+            "description": "组件名称",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "description": "图标类名",
+            "example": "dashboard",
+            "nullable": true
+          },
+          "emoji": {
+            "type": "string",
+            "description": "表情图标",
+            "example": "🏠",
+            "nullable": true
+          },
+          "parent_id": {
+            "type": "string",
+            "description": "父菜单ID",
+            "example": "user_management",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "description": "所需权限",
+            "example": "menu:dashboard",
+            "nullable": true
+          },
+          "menu_type": {
+            "type": "string",
+            "enum": ["menu", "button", "tab"],
+            "description": "菜单类型",
+            "example": "menu"
+          },
+          "sort_order": {
+            "type": "integer",
+            "description": "排序值",
+            "example": 1
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "是否隐藏",
+            "example": false
+          },
+          "is_external": {
+            "type": "boolean",
+            "description": "是否外部链接",
+            "example": false
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled"],
+            "description": "菜单状态",
+            "example": "active"
+          },
+          "meta": {
+            "type": "object",
+            "description": "元数据",
+            "additionalProperties": true,
+            "example": {"title": "总览", "title_en": "Dashboard", "keepAlive": true},
+            "nullable": true
+          }
+        }
+      },
+      "MenuBatchImportRequest": {
+        "type": "object",
+        "required": ["menus"],
+        "properties": {
+          "menus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuCreateRequest"
+            },
+            "description": "菜单列表",
+            "minItems": 1
+          },
+          "clear_existing": {
+            "type": "boolean",
+            "description": "是否清除现有菜单 (默认: false)",
+            "example": false,
+            "default": false
+          }
+        }
+      },
+      "MenuItem": {
+        "type": "object",
+        "required": ["id", "name", "title", "menu_type", "sort_order", "is_hidden", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "菜单唯一ID",
+            "example": "dashboard"
+          },
+          "name": {
+            "type": "string",
+            "description": "菜单名称",
+            "example": "dashboard"
+          },
+          "title": {
+            "type": "string",
+            "description": "显示标题（中文）",
+            "example": "总览"
+          },
+          "title_en": {
+            "type": "string",
+            "description": "英文标题",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "description": "路由路径",
+            "example": "/",
+            "nullable": true
+          },
+          "component": {
+            "type": "string",
+            "description": "组件名称",
+            "example": "Dashboard",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "description": "图标类名",
+            "example": "dashboard",
+            "nullable": true
+          },
+          "emoji": {
+            "type": "string",
+            "description": "表情图标",
+            "example": "🏠",
+            "nullable": true
+          },
+          "parent_id": {
+            "type": "string",
+            "description": "父菜单ID",
+            "example": "user_management",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "description": "所需权限",
+            "example": "menu:dashboard",
+            "nullable": true
+          },
+          "menu_type": {
+            "type": "string",
+            "enum": ["menu", "button", "tab"],
+            "description": "菜单类型",
+            "example": "menu"
+          },
+          "sort_order": {
+            "type": "integer",
+            "description": "排序值",
+            "example": 1
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "是否隐藏",
+            "example": false
+          },
+          "is_external": {
+            "type": "boolean",
+            "description": "是否外部链接",
+            "example": false,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled"],
+            "description": "菜单状态",
+            "example": "active"
+          },
+          "meta": {
+            "type": "object",
+            "description": "元数据",
+            "additionalProperties": true,
+            "example": {"keepAlive": true},
+            "nullable": true
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuItem"
+            },
+            "description": "子菜单",
+            "nullable": true
+          }
+        }
+      },
+      "MenuResponse": {
+        "type": "object",
+        "required": ["success", "message"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "操作是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "成功导入 2 个菜单"
+          },
+          "data": {
+            "type": "object",
+            "description": "响应数据",
+            "additionalProperties": true,
+            "example": {
+              "imported_count": 2,
+              "clear_existing": false
+            },
+            "nullable": true
+          }
+        }
+      },
+      "APIError": {
+        "type": "object",
+        "required": ["detail", "status_code"],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "错误描述信息"
+          },
+          "status_code": {
+            "type": "integer",
+            "description": "HTTP状态码"
+          }
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "未认证或token过期",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/APIError"
+            },
+            "example": {
+              "detail": "未认证或token已过期",
+              "status_code": 401
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "权限不足",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/APIError"
+            },
+            "example": {
+              "detail": "只有管理员可以批量导入菜单",
+              "status_code": 403
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/APIError"
+            },
+            "example": {
+              "detail": "菜单不存在",
+              "status_code": 404
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务器内部错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/APIError"
+            },
+            "example": {
+              "detail": "服务器内部错误，请稍后重试",
+              "status_code": 500
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "菜单管理",
+      "description": "菜单管理相关接口，包括CRUD操作和批量导入"
+    }
+  ]
+}

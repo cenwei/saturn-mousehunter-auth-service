@@ -1,0 +1,30 @@
+{
+  "total_menus": 23,
+  "accessible_menus": 23,
+  "permission_coverage": 100.0,
+  "menu_usage": {
+    "dashboard": 1,
+    "market_config": 1,
+    "trading_calendar": 1,
+    "trading_calendar_table": 1,
+    "instrument_pool": 1,
+    "benchmark_pool": 1,
+    "pool_intersection": 1,
+    "proxy_pool": 1,
+    "kline_management": 1,
+    "cookie_management": 1,
+    "auth_service": 1,
+    "user_management": 1,
+    "admin_users": 1,
+    "tenant_users": 1,
+    "role_management": 1,
+    "role_list": 1,
+    "permission_management": 1,
+    "strategy_engine": 1,
+    "universe": 1,
+    "api_explorer": 1,
+    "table_demo": 1,
+    "skin_theme_demo": 1,
+    "logs": 1
+  }
+}
