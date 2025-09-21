@@ -19,6 +19,7 @@ dependencies = [
     "saturn-mousehunter-shared>=0.1.0",
     "pyjwt>=2.10.1",
     "email-validator>=2.3.0",
+    "aiohttp>=3.12.15",
 ]
 
 [project.scripts]

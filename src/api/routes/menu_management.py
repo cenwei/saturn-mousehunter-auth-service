@@ -142,15 +142,30 @@ async def create_menu(
                 detail="只有管理员可以创建菜单"
             )
 
-        # TODO: 这里应该调用具体的菜单创建服务
-        # 现在返回模拟响应
-        log.info(f"Admin {current_user['user_id']} created menu: {request.id}")
+        # 调用菜单创建服务
+        try:
+            menu_id = await menu_service.create_menu(request, current_user['user_id'])
 
-        return MenuResponse(
-            success=True,
-            message=f"菜单 '{request.title}' 创建成功",
-            data={"menu_id": request.id}
-        )
+            log.info(f"Admin {current_user['user_id']} created menu: {menu_id}")
+
+            return MenuResponse(
+                success=True,
+                message=f"菜单 '{request.title}' 创建成功",
+                data={"menu_id": menu_id}
+            )
+
+        except ValueError as e:
+            # 业务逻辑错误（如ID重复、父菜单不存在等）
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+        except RuntimeError as e:
+            # 系统错误（如数据库不可用）
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(e)
+            )
 
     except HTTPException:
         raise
@@ -190,15 +205,47 @@ async def update_menu(
                 detail=f"菜单 '{menu_id}' 不存在"
             )
 
-        # TODO: 这里应该调用具体的菜单更新服务
-        # 现在返回模拟响应
-        log.info(f"Admin {current_user['user_id']} updated menu: {menu_id}")
+        # 构建更新数据
+        update_data = {}
+        for field, value in request.dict(exclude_unset=True).items():
+            if value is not None:
+                update_data[field] = value
 
-        return MenuResponse(
-            success=True,
-            message=f"菜单 '{menu_id}' 更新成功",
-            data={"menu_id": menu_id}
-        )
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="没有提供要更新的数据"
+            )
+
+        # 调用菜单更新服务
+        try:
+            success = await menu_service.update_menu(menu_id, update_data, current_user['user_id'])
+
+            if success:
+                log.info(f"Admin {current_user['user_id']} updated menu: {menu_id}")
+                return MenuResponse(
+                    success=True,
+                    message=f"菜单 '{menu_id}' 更新成功",
+                    data={"menu_id": menu_id}
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"更新菜单 '{menu_id}' 失败"
+                )
+
+        except ValueError as e:
+            # 业务逻辑错误
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+        except RuntimeError as e:
+            # 系统错误
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(e)
+            )
 
     except HTTPException:
         raise
@@ -237,15 +284,35 @@ async def delete_menu(
                 detail=f"菜单 '{menu_id}' 不存在"
             )
 
-        # TODO: 这里应该调用具体的菜单删除服务
-        # 现在返回模拟响应
-        log.info(f"Admin {current_user['user_id']} deleted menu: {menu_id}")
+        # 调用菜单删除服务
+        try:
+            success = await menu_service.delete_menu(menu_id, current_user['user_id'])
 
-        return MenuResponse(
-            success=True,
-            message=f"菜单 '{menu_id}' 删除成功",
-            data={"menu_id": menu_id}
-        )
+            if success:
+                log.info(f"Admin {current_user['user_id']} deleted menu: {menu_id}")
+                return MenuResponse(
+                    success=True,
+                    message=f"菜单 '{menu_id}' 删除成功",
+                    data={"menu_id": menu_id}
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"删除菜单 '{menu_id}' 失败"
+                )
+
+        except ValueError as e:
+            # 业务逻辑错误
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+        except RuntimeError as e:
+            # 系统错误
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(e)
+            )
 
     except HTTPException:
         raise
@@ -325,20 +392,34 @@ async def batch_import_menus(
                 detail="只有管理员可以批量导入菜单"
             )
 
-        # TODO: 这里应该调用具体的批量导入服务
-        # 现在返回模拟响应
-        imported_count = len(request.menus)
+        # 调用批量导入服务
+        try:
+            result = await menu_service.batch_import_menus(
+                request.menus,
+                current_user['user_id'],
+                request.clear_existing
+            )
 
-        log.info(f"Admin {current_user['user_id']} batch imported {imported_count} menus")
+            log.info(f"Admin {current_user['user_id']} batch imported menus: {result}")
 
-        return MenuResponse(
-            success=True,
-            message=f"成功导入 {imported_count} 个菜单",
-            data={
-                "imported_count": imported_count,
-                "clear_existing": request.clear_existing
-            }
-        )
+            return MenuResponse(
+                success=True,
+                message=f"批量导入完成: 成功 {result['created_count']}/{result['total_count']} 个菜单",
+                data={
+                    "total_count": result["total_count"],
+                    "created_count": result["created_count"],
+                    "skipped_count": result["skipped_count"],
+                    "errors": result["errors"],
+                    "clear_existing": request.clear_existing
+                }
+            )
+
+        except RuntimeError as e:
+            # 系统错误
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(e)
+            )
 
     except HTTPException:
         raise

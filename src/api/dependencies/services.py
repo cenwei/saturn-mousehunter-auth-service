@@ -8,6 +8,7 @@ from application.services.permission_service import PermissionService
 from application.services.menu_permission_service import MenuPermissionService
 from application.utils import JWTUtils
 from infrastructure.repositories import AdminUserRepo, TenantUserRepo, UserRoleRepo, AuditLogRepo, RoleRepo, PermissionRepo
+from infrastructure.repositories.menu_repo import MenuRepo
 from infrastructure.config import get_jwt_config
 from api.dependencies.dao import get_dao
 
@@ -46,6 +47,12 @@ async def get_permission_repo() -> PermissionRepo:
     """获取权限仓库"""
     dao = get_dao()
     return PermissionRepo(dao)
+
+
+async def get_menu_repo() -> MenuRepo:
+    """获取菜单仓库"""
+    dao = get_dao()
+    return MenuRepo(dao)
 
 
 async def get_jwt_utils() -> JWTUtils:
@@ -108,8 +115,13 @@ async def get_permission_service(
 
 async def get_menu_permission_service(
     user_role_repo: UserRoleRepo = Depends(get_user_role_repo),
+    menu_repo: MenuRepo = Depends(get_menu_repo),
 ) -> MenuPermissionService:
     """获取菜单权限服务"""
-    return MenuPermissionService(
-        user_role_repo=user_role_repo
+    service = MenuPermissionService(
+        user_role_repo=user_role_repo,
+        menu_repo=menu_repo
     )
+    # 初始化菜单存储
+    await service.initialize_menu_storage()
+    return service
